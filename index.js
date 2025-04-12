@@ -47,6 +47,7 @@ async function run() {
         // Get the database and collection on which to run the operation
         const database = client.db("inventoryDB");
         const products = database.collection("products");
+        const purchase = database.collection("purchase");
         const categories = database.collection("categories");
         const units = database.collection("units");
 
@@ -57,6 +58,18 @@ async function run() {
         app.get("/api/v1/products", async (req, res) => {
             try {
                 const result = (await products.find().sort({ _id: -1 }).toArray());
+                res.status(200).send(result);
+            }
+            catch (error) {
+                console.log(error);
+                res.status(500).send({ error: error });
+            }
+        });
+
+        // get api for purchase
+        app.get("/api/v1/purchase", async (req, res) => {
+            try {
+                const result = (await purchase.find().sort({ _id: -1 }).toArray());
                 res.status(200).send(result);
             }
             catch (error) {
@@ -121,6 +134,49 @@ async function run() {
         });
 
 
+        // post api for Purchase 
+        app.post("/api/v1/purchase", async (req, res) => {
+            const { date, items, supplierName, supplierPhone, givenCash } = req.body;
+            // console.log(req.body);
+            if (!date || !items || !Array.isArray(items) || items.length === 0) {
+                return res.status(400).send({ error: "ডেট ও আইটেম দিন!" });
+            }
+
+            try {
+
+
+                let totalAmount = 0;
+
+                // Loop through each item in the purchase and update the product stock  
+                for (const item of items) {
+                    const { productId, quantity, unitPrice } = item;
+                    totalAmount += quantity * unitPrice;
+
+                    await products.updateOne(
+                        { _id: new ObjectId(productId) },
+                        { $inc: { stock: quantity } }
+                    );
+                }
+
+                await purchase.insertOne({
+                    date,
+                    supplierName,
+                    supplierPhone,
+                    items,
+                    totalAmount: parseFloat(totalAmount.toFixed(2)),
+                    givenCash: parseFloat(givenCash),
+                    dueAmount: parseFloat(totalAmount.toFixed(2)) - parseFloat(givenCash),
+                    createdAt: moment().tz('Asia/Dhaka').format('DD-MM-YYYY')
+                });
+
+                res.status(201).send({ message: "✅ ক্রয় লগ হয়েছে!" });
+            } catch (err) {
+                console.error(err);
+                res.status(500).send({ error: "সার্ভার এরর!" });
+            }
+        });
+
+
         //post api for units
         app.post("/api/v1/units", async (req, res) => {
             try {
@@ -154,7 +210,7 @@ async function run() {
         app.patch("/api/v1/products/:id", async (req, res) => {
             try {
                 const id = req.params.id;
-               
+
                 const { name, unit, stock, purchasePrice, sellPrice, category } = req.body;
                 const filter = { _id: new ObjectId(id) };
                 const updateDoc = {
@@ -176,6 +232,29 @@ async function run() {
                 res.status(500).send({ error: error });
             }
         });
+
+        // PATCH /api/v1/purchases/:id
+        app.patch("/api/v1/purchases/:id", async (req, res) => {
+            const { id } = req.params;
+            const { givenCash } = req.body;
+
+            try {
+                const result = await purchase.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { givenCash } }
+                );
+
+                if (result.modifiedCount === 0) {
+                    return res.status(404).send({ message: "Purchase not found or already up-to-date" });
+                }
+
+                res.send({ message: "Purchase updated successfully" });
+            } catch (err) {
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+
         // patch api for categories
         app.patch("/api/v1/categories/:id", async (req, res) => {
             try {
