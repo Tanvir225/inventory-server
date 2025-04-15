@@ -234,22 +234,43 @@ async function run() {
         });
 
         // PATCH /api/v1/purchases/:id
-        app.patch("/api/v1/purchases/:id", async (req, res) => {
+        app.patch("/api/v1/purchase/:id", async (req, res) => {
             const { id } = req.params;
             const { givenCash } = req.body;
 
             try {
-                const result = await purchase.updateOne(
-                    { _id: new ObjectId(id) },
-                    { $set: { givenCash } }
-                );
+                // Find the existing purchase
+                const existing = await purchase.findOne({ _id: new ObjectId(id) });
 
-                if (result.modifiedCount === 0) {
-                    return res.status(404).send({ message: "Purchase not found or already up-to-date" });
+                if (!existing) {
+                    return res.status(404).send({ message: "Purchase not found" });
                 }
 
-                res.send({ message: "Purchase updated successfully" });
+                const totalAmount = existing.totalAmount || 0;
+                const cash = existing.givenCash || 0;
+                const dueAmount = totalAmount - (cash + parseFloat(givenCash));
+                // Update the purchase with new givenCash and calculated dueAmount
+                const result = await purchase.updateOne(
+                    { _id: new ObjectId(id) },
+                    {
+                        $set: {
+                            givenCash: cash + parseFloat(givenCash),
+                            dueAmount
+                        }
+                    }
+                );
+
+                res.send({
+                    message: "✅ Payment info updated",
+                    updated: {
+                        givenCash,
+                        totalAmount,
+                        dueAmount
+                    }
+                });
+
             } catch (err) {
+                console.error(err);
                 res.status(500).send({ error: "Server error" });
             }
         });
