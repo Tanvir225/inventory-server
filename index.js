@@ -255,7 +255,7 @@ async function run() {
                     {
                         $set: {
                             givenCash: cash + parseFloat(givenCash),
-                            dueAmount
+                            dueAmount : dueAmount,
                         }
                     }
                 );
@@ -263,7 +263,7 @@ async function run() {
                 res.send({
                     message: "✅ Payment info updated",
                     updated: {
-                        givenCash,
+                        givenCash: cash + parseFloat(givenCash),
                         totalAmount,
                         dueAmount
                     }
