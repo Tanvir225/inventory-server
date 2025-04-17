@@ -255,7 +255,7 @@ async function run() {
                     {
                         $set: {
                             givenCash: cash + parseFloat(givenCash),
-                            dueAmount : dueAmount,
+                            dueAmount: dueAmount,
                         }
                     }
                 );
@@ -350,6 +350,29 @@ async function run() {
             }
         });
         // end all delete api -------------------------------------------------------------------------------------->
+
+        // all single get api-------------------------------------------------------------------------------------->
+        // get api for single purchase
+        // GET /api/v1/purchase/:id
+        app.get("/api/v1/purchase/:id", async (req, res) => {
+            const { id } = req.params;
+
+            try {
+                const result = await purchase.findOne({ _id: new ObjectId(id) });
+
+                if (!result) {
+                    return res.status(404).send({ message: "Purchase not found" });
+                }
+
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ message: "Server error" });
+            }
+        });
+
+
+        //end all single get api -------------------------------------------------------------------------------------->
 
 
         // // Send a ping to confirm a successful connection
