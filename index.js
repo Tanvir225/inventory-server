@@ -177,6 +177,40 @@ async function run() {
         });
 
 
+        app.post("/sales", async (req, res) => {
+            try {
+                const db = await connectDb();
+                const { date, customerName, customerPhone, givenCash, total, dueAmount, items } = req.body;
+
+                const sale = {
+                    date,
+                    customerName,
+                    customerPhone,
+                    givenCash,
+                    total,
+                    dueAmount,
+                    items
+                };
+
+                await db.collection("sells").insertOne(sale);
+
+                for (const item of items) {
+                    await db.collection("products").updateOne(
+                        { _id: new ObjectId(item.productId) },
+                        { $inc: { stock: -item.quantity } }
+                    );
+                }
+
+                res.status(201).json({ message: "Sale recorded successfully!" });
+
+            } catch (err) {
+                console.error(err);
+                res.status(500).json({ error: "Sale failed!" });
+            }
+        });
+
+
+
         //post api for units
         app.post("/api/v1/units", async (req, res) => {
             try {
