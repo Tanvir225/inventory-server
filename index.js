@@ -48,6 +48,7 @@ async function run() {
         const database = client.db("inventoryDB");
         const products = database.collection("products");
         const purchase = database.collection("purchase");
+        const sells = database.collection("sells");
         const categories = database.collection("categories");
         const units = database.collection("units");
 
@@ -177,10 +178,10 @@ async function run() {
         });
 
 
-        app.post("/sales", async (req, res) => {
+        app.post("/api/v1/sales", async (req, res) => {
             try {
-                const db = await connectDb();
-                const { date, customerName, customerPhone, givenCash, total, dueAmount, items } = req.body;
+               
+                const { date, customerName, customerPhone, givenCash, total, dueAmount,discount,returnAmount, items } = req.body;
 
                 const sale = {
                     date,
@@ -188,14 +189,17 @@ async function run() {
                     customerPhone,
                     givenCash,
                     total,
+                    discount,
+                    returnAmount,
                     dueAmount,
                     items
                 };
+                // console.log(sale);
 
-                await db.collection("sells").insertOne(sale);
+                await sells.insertOne(sale);
 
                 for (const item of items) {
-                    await db.collection("products").updateOne(
+                    await products.updateOne(
                         { _id: new ObjectId(item.productId) },
                         { $inc: { stock: -item.quantity } }
                     );
