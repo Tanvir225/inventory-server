@@ -78,6 +78,17 @@ async function run() {
                 res.status(500).send({ error: error });
             }
         });
+        // get api for sells
+        app.get("/api/v1/sales", async (req, res) => {
+            try {
+                const result = (await sells.find().sort({ _id: -1 }).toArray());
+                res.status(200).send(result);
+            }
+            catch (error) {
+                console.log(error);
+                res.status(500).send({ error: error });
+            }
+        });
 
         // get api for categories
         app.get("/api/v1/categories", async (req, res) => {
@@ -177,7 +188,7 @@ async function run() {
             }
         });
 
-
+        // post api for sales
         app.post("/api/v1/sales", async (req, res) => {
             try {
                
@@ -306,6 +317,49 @@ async function run() {
                         dueAmount
                     }
                 });
+
+            } catch (err) {
+                console.error(err);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+
+        // PATCH /api/v1/sales/:id
+        app.patch("/api/v1/sales/:id", async (req, res) => {
+            const { id } = req.params;
+            const { cash } = req.body;
+            console.log(cash);
+            try {
+                // Find the existing sell
+                // const existing = await sells.findOne({ _id: new ObjectId(id) });
+
+                // if (!existing) {
+                //     return res.status(404).send({ message: "sell not found" });
+                // }
+
+                // const totalAmount = existing.total || 0;
+                // const cashAmount = existing.givenCash || 0;
+                // const dueAmount = totalAmount - (cashAmount + parseFloat(cash));
+                // // Update the purchase with new givenCash and calculated dueAmount
+                // const result = await purchase.updateOne(
+                //     { _id: new ObjectId(id) },
+                //     {
+                //         $set: {
+                //             givenCash: cashAmount + parseFloat(cash),
+                //             dueAmount: dueAmount,
+                //         }
+                //     }
+                // );
+
+                // res.send({
+                //     message: "✅ Payment info updated",
+                //     updated: {
+                //         givenCash: cashAmount + parseFloat(cash),
+                //         totalAmount,
+                //         dueAmount
+                //     }
+                // });
 
             } catch (err) {
                 console.error(err);
