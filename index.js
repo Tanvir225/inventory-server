@@ -191,8 +191,8 @@ async function run() {
         // post api for sales
         app.post("/api/v1/sales", async (req, res) => {
             try {
-               
-                const { date, customerName, customerPhone, givenCash, total, dueAmount,discount,returnAmount, items } = req.body;
+
+                const { date, customerName, customerPhone, givenCash, total, dueAmount, discount, returnAmount, items } = req.body;
 
                 const sale = {
                     date,
@@ -329,37 +329,57 @@ async function run() {
         app.patch("/api/v1/sales/:id", async (req, res) => {
             const { id } = req.params;
             const { cash } = req.body;
-            console.log(cash);
+            let dueAmount = 0;
+            let returnAmount = 0;
+
+            // console.log(cash);
             try {
                 // Find the existing sell
-                // const existing = await sells.findOne({ _id: new ObjectId(id) });
+                const existing = await sells.findOne({ _id: new ObjectId(id) });
 
-                // if (!existing) {
-                //     return res.status(404).send({ message: "sell not found" });
-                // }
+                if (!existing) {
+                    return res.status(404).send({ message: "sell not found" });
+                }
 
-                // const totalAmount = existing.total || 0;
-                // const cashAmount = existing.givenCash || 0;
-                // const dueAmount = totalAmount - (cashAmount + parseFloat(cash));
+                const totalAmount = existing.total || 0;
+                const cashAmount = existing.givenCash || 0;
+
+                //totalCash amount
+                const totalCash = cashAmount + parseFloat(cash)
+
+
+                // returnAmount & due logic
+                if (totalCash > totalAmount) {
+                     returnAmount = totalCash - totalAmount
+                }
+
+
+                else {
+                     dueAmount = totalAmount - totalCash;
+                }
+
+
                 // // Update the purchase with new givenCash and calculated dueAmount
-                // const result = await purchase.updateOne(
-                //     { _id: new ObjectId(id) },
-                //     {
-                //         $set: {
-                //             givenCash: cashAmount + parseFloat(cash),
-                //             dueAmount: dueAmount,
-                //         }
-                //     }
-                // );
+                const result = await sells.updateOne(
+                    { _id: new ObjectId(id) },
+                    {
+                        $set: {
+                            givenCash: totalCash,
+                            dueAmount: dueAmount,
+                            returnAmount:returnAmount
+                        }
+                    }
+                );
 
-                // res.send({
-                //     message: "✅ Payment info updated",
-                //     updated: {
-                //         givenCash: cashAmount + parseFloat(cash),
-                //         totalAmount,
-                //         dueAmount
-                //     }
-                // });
+                res.send({
+                    message: "✅ Payment info updated",
+                    updated: {
+                        givenCash: totalCash,
+                        totalAmount,
+                        dueAmount,
+                        returnAmount
+                    }
+                });
 
             } catch (err) {
                 console.error(err);
