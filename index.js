@@ -114,6 +114,18 @@ async function run() {
             }
         });
 
+        //due-sells api
+        app.get("/api/v1/due-sells", async (req, res) => {
+            try {
+                const result = await sells.find({ dueAmount: { $gt: 0 } }).toArray();
+                res.status(200).send(result);
+            }
+            catch (error) {
+                console.log(error);
+                res.status(500).send({ error: error });
+            }
+        });
+
 
         // end all get api -------------------------------------------------------------------------------------->
 
@@ -350,12 +362,12 @@ async function run() {
 
                 // returnAmount & due logic
                 if (totalCash > totalAmount) {
-                     returnAmount = totalCash - totalAmount
+                    returnAmount = totalCash - totalAmount
                 }
 
 
                 else {
-                     dueAmount = totalAmount - totalCash;
+                    dueAmount = totalAmount - totalCash;
                 }
 
 
@@ -366,7 +378,7 @@ async function run() {
                         $set: {
                             givenCash: totalCash,
                             dueAmount: dueAmount,
-                            returnAmount:returnAmount
+                            returnAmount: returnAmount
                         }
                     }
                 );
@@ -464,6 +476,7 @@ async function run() {
         // end all delete api -------------------------------------------------------------------------------------->
 
         // all single get api-------------------------------------------------------------------------------------->
+
         // get api for single purchase
         // GET /api/v1/purchase/:id
         app.get("/api/v1/purchase/:id", async (req, res) => {
@@ -482,6 +495,28 @@ async function run() {
                 res.status(500).send({ message: "Server error" });
             }
         });
+
+
+        // get api for single sale
+        // GET /api/v1/sales/:id
+        app.get("/api/v1/sales/:id", async (req, res) => {
+            const { id } = req.params;
+
+            try {
+                const result = await sells.findOne({ _id: new ObjectId(id) });
+
+                if (!result) {
+                    return res.status(404).send({ message: "sale not found" });
+                }
+
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ message: "Server error" });
+            }
+        });
+
+
 
 
         //end all single get api -------------------------------------------------------------------------------------->
