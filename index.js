@@ -28,6 +28,7 @@ app.get("/", (req, res) => {
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const e = require("express");
 const uri = process.env.MONGO_URI;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -49,6 +50,7 @@ async function run() {
         const products = database.collection("products");
         const purchase = database.collection("purchase");
         const sells = database.collection("sells");
+        const expenses = database.collection("expenses");
         const categories = database.collection("categories");
         const units = database.collection("units");
 
@@ -82,6 +84,18 @@ async function run() {
         app.get("/api/v1/sales", async (req, res) => {
             try {
                 const result = (await sells.find().sort({ _id: -1 }).toArray());
+                res.status(200).send(result);
+            }
+            catch (error) {
+                console.log(error);
+                res.status(500).send({ error: error });
+            }
+        });
+
+        // get api for expenses
+        app.get("/api/v1/expenses", async (req, res) => {
+            try {
+                const result = (await expenses.find().sort({ _id: -1 }).toArray());
                 res.status(200).send(result);
             }
             catch (error) {
@@ -233,6 +247,26 @@ async function run() {
             } catch (err) {
                 console.error(err);
                 res.status(500).json({ error: "Sale failed!" });
+            }
+        });
+
+        //post api for expenses
+        app.post("/api/v1/expenses", async (req, res) => {
+            try {
+                const { date, title, amount, note, paymentMethod } = req.body;
+                const expense = {
+                    date,
+                    title,
+                    amount: parseFloat(amount),
+                    paymentMethod,
+                    note,
+                };
+                console.log(expense);
+                await expenses.insertOne(expense);
+                res.status(201).json({ message: "Expense recorded successfully!" });
+            } catch (err) {
+                console.error(err);
+                res.status(500).json({ error: "Expense failed!" });
             }
         });
 
@@ -396,6 +430,25 @@ async function run() {
             } catch (err) {
                 console.error(err);
                 res.status(500).send({ error: "Server error" });
+            }
+        });
+
+        // patch api for expenses
+        app.patch("/api/v1/expenses/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const expense = req.body;
+                // console.log(id);
+                const filter = { _id: new ObjectId(id) };
+                const updateDoc = {
+                    $set: expense,
+                };
+                const result = await expenses.updateOne(filter, updateDoc);
+                res.status(200).send(result);
+            }
+            catch (error) {
+                console.log(error);
+                res.status(500).send({ error: error });
             }
         });
 
