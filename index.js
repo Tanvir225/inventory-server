@@ -140,6 +140,80 @@ async function run() {
             }
         });
 
+        //today summary api
+        app.get("/api/v1/today-summary", async (req, res) => {
+            const todayStart = moment().startOf("day").toDate();
+            const todayEnd = moment().endOf("day").toDate();
+
+            console.log(todayEnd, todayStart);
+
+            const [purchaseAgg, salesAgg, expenseAgg] = await Promise.all([
+                purchase.aggregate([
+                    { $match: { createdAt: { $gte: todayStart, $lte: todayEnd } } },
+                    { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+                ]).toArray(),
+
+                sells.aggregate([
+                    { $match: { createdAt: { $gte: todayStart, $lte: todayEnd } } },
+                    { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+                ]).toArray(),
+
+                expenses.aggregate([
+                    { $match: { createdAt: { $gte: todayStart, $lte: todayEnd } } },
+                    { $group: { _id: null, total: { $sum: "$amount" } } },
+                ]).toArray(),
+            ]);
+
+            const totalPurchase = purchaseAgg[0]?.total || 0;
+            const totalSales = salesAgg[0]?.total || 0;
+            const totalExpense = expenseAgg[0]?.total || 0;
+            const profit = totalSales - totalPurchase - totalExpense;
+
+            res.send({
+                purchase: totalPurchase,
+                sales: totalSales,
+                expense: totalExpense,
+                profit,
+            });
+        })
+
+
+        //this month summary api moment().tz('Asia/Dhaka').format('DD-MM-YYYY')
+        app.get("/api/v1/month-summary", async (req, res) => {
+            const monthStart = moment().startOf("month").toDate();
+            const monthEnd = moment().endOf("month").toDate();
+
+            const [purchaseAgg, salesAgg, expenseAgg] = await Promise.all([
+                purchase.aggregate([
+                    { $match: { createdAt: { $gte: monthStart, $lte: monthEnd } } },
+                    { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+                ]).toArray(),
+
+                sells.aggregate([
+                    { $match: { createdAt: { $gte: monthStart, $lte: monthEnd } } },
+                    { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+                ]).toArray(),
+
+                expenses.aggregate([
+                    { $match: { createdAt: { $gte: monthStart, $lte: monthEnd } } },
+                    { $group: { _id: null, total: { $sum: "$amount" } } },
+                ]).toArray(),
+            ]);
+
+            const totalPurchase = purchaseAgg[0]?.total || 0;
+            const totalSales = salesAgg[0]?.total || 0;
+            const totalExpense = expenseAgg[0]?.total || 0;
+            const profit = totalSales - totalPurchase - totalExpense;
+
+            res.send({
+                purchase: totalPurchase,
+                sales: totalSales,
+                expense: totalExpense,
+                profit,
+            });
+        })
+
+
 
         // end all get api -------------------------------------------------------------------------------------->
 
