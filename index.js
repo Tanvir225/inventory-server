@@ -213,6 +213,92 @@ async function run() {
             });
         })
 
+        //top 5 products api
+        app.get("/api/v1/top-products", async (req, res) => {
+            try {
+                // Get the start and end of the current month
+                const monthStart = moment().startOf("month").toDate();
+                const monthEnd = moment().endOf("month").toDate();
+
+                const topProducts = await sells.aggregate([
+                    {
+                        $match: {
+                            timeStamp: { $gte: monthStart, $lte: monthEnd },
+                        },
+                    },
+                    {
+                        $unwind: "$items", // Flatten the items array
+                    },
+                    {
+                        $group: {
+                            _id: "$items.productId",
+                            name: { $first: "$items.name" },
+                            totalSold: { $sum: "$items.quantity" },
+                        },
+                    },
+                    {
+                        $sort: { totalSold: -1 },
+                    },
+                    {
+                        $limit: 5,
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            name: 1,
+                            totalSold: 1,
+                        },
+                    },
+                ]).toArray();
+
+                return res.send(topProducts);
+            } catch (error) {
+                console.error("Error in top-products:", error);
+                return res.send({ message: "Internal Server Error" }, { status: 500 });
+            }
+        })
+
+        //profit trend api
+        app.get('/api/v1/profit-trend', async (req, res) => {
+           
+
+            const result = [];
+
+            for (let i = 29; i >= 0; i--) {
+                const day = moment().tz('Asia/Dhaka').subtract(i, 'days');
+                const dayStart = day.startOf('day').toDate();
+                const dayEnd = day.endOf('day').toDate();
+
+                const totalSales = await sells.aggregate([
+                    { $match: { timeStamp: { $gte: dayStart, $lte: dayEnd } } },
+                    { $group: { _id: null, total: { $sum: '$total' } } }
+                ]).toArray();
+
+                const totalPurchase = await purchase.aggregate([
+                    { $match: { timeStamp: { $gte: dayStart, $lte: dayEnd } } },
+                    { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+                ]).toArray();
+
+                const totalExpense = await expenses.aggregate([
+                    { $match: { timeStamp: { $gte: dayStart, $lte: dayEnd } } },
+                    { $group: { _id: null, total: { $sum: '$amount' } } }
+                ]).toArray();
+
+                const sale = totalSales[0]?.total || 0;
+                const purchases = totalPurchase[0]?.total || 0;
+                const expense = totalExpense[0]?.total || 0;
+                console.log(sale, purchases, expense);
+                const profit = sale - purchases - expense;
+
+                result.push({
+                    date: day.format('D MMM'),
+                    profit
+                });
+            }
+
+            res.send(result);
+        });
+
 
 
         // end all get api -------------------------------------------------------------------------------------->
@@ -233,7 +319,7 @@ async function run() {
                     sellPrice,
                     stock,
                     createdAt: moment().tz('Asia/Dhaka').format('DD-MM-YYYY'),
-                    timeStamp: moment().tz('Asia/Dhaka').toDate() 
+                    timeStamp: moment().tz('Asia/Dhaka').toDate()
                 };
 
                 const result = await products.insertOne(newProduct);
@@ -298,7 +384,7 @@ async function run() {
 
                 const sale = {
                     date,
-                    timeStamp: moment().tz('Asia/Dhaka').toDate() ,
+                    timeStamp: moment().tz('Asia/Dhaka').toDate(),
                     customerName,
                     customerPhone,
                     givenCash,
@@ -333,7 +419,7 @@ async function run() {
                 const { date, title, amount, note, paymentMethod } = req.body;
                 const expense = {
                     date,
-                    timeStamp: moment().tz('Asia/Dhaka').toDate() ,
+                    timeStamp: moment().tz('Asia/Dhaka').toDate(),
                     title,
                     amount: parseFloat(amount),
                     paymentMethod,
