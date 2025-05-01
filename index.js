@@ -149,17 +149,17 @@ async function run() {
 
             const [purchaseAgg, salesAgg, expenseAgg] = await Promise.all([
                 purchase.aggregate([
-                    { $match: { createdAt: { $gte: todayStart, $lte: todayEnd } } },
+                    { $match: { timeStamp: { $gte: todayStart, $lte: todayEnd } } },
                     { $group: { _id: null, total: { $sum: "$totalAmount" } } },
                 ]).toArray(),
 
                 sells.aggregate([
-                    { $match: { createdAt: { $gte: todayStart, $lte: todayEnd } } },
-                    { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+                    { $match: { timeStamp: { $gte: todayStart, $lte: todayEnd } } },
+                    { $group: { _id: null, total: { $sum: "$total" } } },
                 ]).toArray(),
 
                 expenses.aggregate([
-                    { $match: { createdAt: { $gte: todayStart, $lte: todayEnd } } },
+                    { $match: { timeStamp: { $gte: todayStart, $lte: todayEnd } } },
                     { $group: { _id: null, total: { $sum: "$amount" } } },
                 ]).toArray(),
             ]);
@@ -185,17 +185,17 @@ async function run() {
 
             const [purchaseAgg, salesAgg, expenseAgg] = await Promise.all([
                 purchase.aggregate([
-                    { $match: { createdAt: { $gte: monthStart, $lte: monthEnd } } },
+                    { $match: { timeStamp: { $gte: monthStart, $lte: monthEnd } } },
                     { $group: { _id: null, total: { $sum: "$totalAmount" } } },
                 ]).toArray(),
 
                 sells.aggregate([
-                    { $match: { createdAt: { $gte: monthStart, $lte: monthEnd } } },
-                    { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+                    { $match: { timeStamp: { $gte: monthStart, $lte: monthEnd } } },
+                    { $group: { _id: null, total: { $sum: "$total" } } },
                 ]).toArray(),
 
                 expenses.aggregate([
-                    { $match: { createdAt: { $gte: monthStart, $lte: monthEnd } } },
+                    { $match: { timeStamp: { $gte: monthStart, $lte: monthEnd } } },
                     { $group: { _id: null, total: { $sum: "$amount" } } },
                 ]).toArray(),
             ]);
@@ -232,7 +232,8 @@ async function run() {
                     purchasePrice,
                     sellPrice,
                     stock,
-                    createdAt: moment().tz('Asia/Dhaka').format('DD-MM-YYYY')
+                    createdAt: moment().tz('Asia/Dhaka').format('DD-MM-YYYY'),
+                    timeStamp: moment().tz('Asia/Dhaka').toDate() 
                 };
 
                 const result = await products.insertOne(newProduct);
@@ -278,7 +279,8 @@ async function run() {
                     totalAmount: parseFloat(totalAmount.toFixed(2)),
                     givenCash: parseFloat(givenCash),
                     dueAmount: parseFloat(totalAmount.toFixed(2)) - parseFloat(givenCash),
-                    createdAt: moment().tz('Asia/Dhaka').format('DD-MM-YYYY')
+                    createdAt: moment().tz('Asia/Dhaka').format('DD-MM-YYYY'),
+                    timeStamp: moment().tz('Asia/Dhaka').toDate()
                 });
 
                 res.status(201).send({ message: "✅ ক্রয় লগ হয়েছে!" });
@@ -296,6 +298,7 @@ async function run() {
 
                 const sale = {
                     date,
+                    timeStamp: moment().tz('Asia/Dhaka').toDate() ,
                     customerName,
                     customerPhone,
                     givenCash,
@@ -330,6 +333,7 @@ async function run() {
                 const { date, title, amount, note, paymentMethod } = req.body;
                 const expense = {
                     date,
+                    timeStamp: moment().tz('Asia/Dhaka').toDate() ,
                     title,
                     amount: parseFloat(amount),
                     paymentMethod,
