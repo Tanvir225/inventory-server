@@ -53,9 +53,34 @@ async function run() {
         const expenses = database.collection("expenses");
         const categories = database.collection("categories");
         const units = database.collection("units");
+        const users = database.collection("users");
 
 
         // all get api-------------------------------------------------------------------------------------->
+
+        //get api for users by email
+        app.get("/api/v1/users", async (req, res) => {
+            try {
+                const email = req.query.email;
+                console.log(email);
+                if (!email) {
+                    return res.status(400).send({ message: "Email is required" });
+                }
+                // Check if the email is valid
+                const result = await users.findOne({ email: email });
+                if (result) {
+                    res.status(200).send(result);
+                }
+                else {
+                    res.status(404).send({ message: "User not found" });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                res.status(500).send({ error: error });
+            }
+        });
+
 
         // get api for products
         app.get("/api/v1/products", async (req, res) => {
@@ -260,7 +285,7 @@ async function run() {
 
         //profit trend api
         app.get('/api/v1/profit-trend', async (req, res) => {
-           
+
 
             const result = [];
 
