@@ -57,9 +57,15 @@ async function run() {
 
 
         // all get api-------------------------------------------------------------------------------------->
-
-        //get api for users by email
+    
+        //users api endpoint
         app.get("/api/v1/users", async (req, res) => {
+            const result = await users.find().toArray();
+            res.send(result);
+        });
+        
+        //get api for users by email
+        app.get("/api/v1/user", async (req, res) => {
             try {
                 const email = req.query.email;
                 console.log(email);
